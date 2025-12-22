@@ -1,0 +1,8 @@
+# files
+```
+README              // Description of the files
+sim                 // Y86-64 simulator tool
+examples.c          // C code for part A
+nocpy.c             // C code for part C
+Makefile            // Makefile to generate handin.tar
+```

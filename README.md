@@ -636,3 +636,78 @@ HCL(Hardware Control Language 硬件控制语言)
 ![](./imgs/chapter6/各个存储器访问时间对比.png)
 ![](./imgs/chapter6/存储器层次结构.png)
 ![](./imgs/chapter6/高速缓存通用组织.png)
+
+
+
+## 9. 虚拟地址
+
+整体框架和优化的流程：
+
+最开始，CPU在请求数据的时候，是直接通过发送**物理地址(PA, Physical Address)**来访问**磁盘(Disk)**中的数据的，这个过程是非常低效的，因为磁盘的访问时间非常长。
+
+为了提升访问效率，引入了**虚拟内存(Virtual Memory)**的概念，CPU不再直接发送物理地址PA，而是发送**虚拟地址(VA, Virtual Address)**，通过**内存管理单元(MMU, Memory Managing Unit)**和操作系统完成对VA到PA的翻译过程，然后再通过PA去访问磁盘中的数据。MMU是存储在**CPU内部**的。
+
+但是这个过程仍然是非常低效的，因为每次CPU访问数据都需要经过MMU进行地址翻译，然后再去磁盘中查找数据，磁盘的访问时间还是非常长。所以为了优化访问磁盘的时间效率，采取**缓存**策略，也即利用 **DRAM** 来对磁盘中的数据进行缓存，这样CPU访问数据时，先通过MMU翻译VA得到PA，然后**先在DRAM中查找数据**，如果找到了就直接返回给CPU；否则**再去磁盘中查找数据**。如果在DRAM中没有找到数据，这个过程称为 **缺页(page fault)**，需要操作系统的内核介入，将对应的磁盘数据加载到DRAM中，然后再返回给CPU。（见下方第一个贴图）
+
+在MMU中进行地址翻译的时候，涉及到VA到PA的映射关系，这个映射关系是通过**页表(Page Table)** 来实现的。页表存储了VA到PA的映射关系，当MMU接收到一个VA时，会查找页表，找到对应的PA，然后再去DRAM或磁盘中查找数据。页表是存储在**DRAM**中的，因此MMU在进行地址翻译时，可能需要访问DRAM来获取页表信息，这个过程也会影响访问效率。
+
+那为了提升页表的访问效率，引入了**快表(TLB, Translation Lookaside Buffer)**，TLB是一个小型的缓存，专门用于存储最近使用的VA到PA的映射关系。当MMU接收到一个VA时，首先会在TLB中查找，如果找到了对应的PA，就直接返回给CPU；否则再去DRAM中的页表查找。如果在TLB中没有找到对应的映射关系，这个过程称为 **TLB缺失(TLB miss)**，需要访问DRAM中的页表来获取映射关系，然后将其加载到TLB中，以便下次访问时可以更快地找到。TLB是存储在**CPU内部**的，因此访问速度非常快。
+
+下面给出一个使用markdown语法绘制的整体框架图：
+
+```mermaid
+graph TD
+    subgraph CPU [CPU Chip]
+        direction TB
+        A[CPU Core] --> B[MMU];
+        B --> C[TLB];
+        
+        subgraph Cache [CPU Cache]
+            D[L1/L2/L3 Cache];
+        end
+    end
+
+    subgraph Main Memory [Main Memory DRAM]
+        E[Page Tables];
+        F[Cached Disk Pages];
+    end
+
+    subgraph Persistent Storage [Persistent Storage]
+        G[Disk/SSD];
+    end
+
+    %% Data Request Path
+    A -- "Virtual Address (VA)" --> B;
+    B -- "Check TLB" --> C;
+    
+    C -- "TLB Hit<br>Get PA" --> B;
+    C -- "TLB Miss" --> E;
+    
+    B -- "Physical Address (PA)" --> D;
+    
+    D -- "Cache Hit" --> A;
+    D -- "Cache Miss" --> F;
+    
+    F -- "Page Found in DRAM<br>(Cache Hit)" --> D;
+    F -- "Page Fault<br>(Not in DRAM)" --> G;
+    
+    G -- "OS Loads Page to DRAM" --> F;
+    
+    E -- "Page Table Walk<br>Get PA" --> B;
+
+    %% Styling
+    linkStyle 0 stroke:green,stroke-width:2px;
+    linkStyle 1 stroke:blue,stroke-width:2px;
+    linkStyle 2 stroke:green,stroke-width:2px;
+    linkStyle 3 stroke:blue,stroke-width:2px;
+    linkStyle 4 stroke:green,stroke-width:2px;
+    linkStyle 5 stroke:green,stroke-width:2px;
+    linkStyle 6 stroke:blue,stroke-width:2px;
+    linkStyle 7 stroke:green,stroke-width:2px;
+    linkStyle 8 stroke:blue,stroke-width:2px;
+    linkStyle 9 stroke:red,stroke-width:2px;
+    linkStyle 10 stroke:red,stroke-width:2px;
+```
+
+![第一个贴图](./imgs/chapter9/page_hit_or_fault.png)
+

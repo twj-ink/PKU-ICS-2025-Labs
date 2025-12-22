@@ -1,0 +1,23 @@
+[package]
+name = "y86-dbg"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[[bin]]
+name = "ydb"
+path = "src/main.rs"
+
+[dependencies]
+binutils = { path = "../binutils" }
+y86-sim = { path = "../sim" }
+serde = "1.0"
+serde_json = "1.0"
+dap = "0.4.1-alpha1"
+ctrlc = "3.4.5"
+anyhow.workspace = true
+tracing.workspace = true
+
+[lib]
+crate-type = ["cdylib", "rlib"]

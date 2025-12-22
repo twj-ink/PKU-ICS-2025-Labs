@@ -1,0 +1,18 @@
+# 要求 reg file 必须先写后读 (structural harzard)
+    .pos 0
+    irmovq stack, %rsp
+    irmovq $6, %rsi
+
+    addq %rsi, %rdi
+    nop
+    rrmovq %rdi, %rax # rax should be 6
+
+    nop
+    nop
+    nop
+    nop
+    nop
+    halt
+
+    .pos 0x400
+stack:

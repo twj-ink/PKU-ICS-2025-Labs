@@ -1,0 +1,120 @@
+
+            .pos 0
+            irmovq stack, %rsp
+            irmovq data_to_copy, %rdi
+            irmovq data_dst, %rsi
+            irmovq $1, %rdx
+
+            call ncopy
+            halt
+            nop
+            nop
+            nop
+            nop
+            nop
+        
+        ################################################################################
+# ncopy.ys - Copy a src block of len words to dst.
+# Return the number of positive words (>0) contained in src.
+#
+# Include your name and ID here.
+#
+# Describe how and why you modified the baseline code.
+#
+################################################################################
+# Do not modify this portion
+# Function prologue.
+# %rdi = src, %rsi = dst, %rdx = len
+ncopy:
+    # 初始化
+    xorq %rax, %rax        # count = 0
+
+MainLoop:
+    # 前8个元素
+    andq %rdx,%rdx
+    jle Done
+    rrmovq %rdx, %r11
+    iaddq $-8, %r11        # len - 8
+    jl SmallArrayRemaining          # 如果len<8，使用小数组优化路径
+    mrmovq (%rdi), %r8
+    mrmovq 8(%rdi), %r9
+    mrmovq 16(%rdi), %r10
+    mrmovq 24(%rdi), %r11
+    mrmovq 32(%rdi), %r12
+    mrmovq 40(%rdi), %r13
+    mrmovq 48(%rdi), %r14
+    mrmovq 56(%rdi), %rcx
+
+Check1:
+    andq %r8, %r8
+    rmmovq %r8, (%rsi)
+    jle Check2
+    iaddq $1, %rax
+Check2:
+    andq %r9, %r9
+    rmmovq %r9, 8(%rsi)
+    jle Check3
+    iaddq $1, %rax
+Check3:
+    andq %r10, %r10
+    rmmovq %r10, 16(%rsi)
+    jle Check4
+    iaddq $1, %rax
+Check4:
+    andq %r11, %r11
+    rmmovq %r11, 24(%rsi)
+    jle Check5
+    iaddq $1, %rax
+Check5:
+    andq %r12, %r12
+    rmmovq %r12, 32(%rsi)
+    jle Check6
+    iaddq $1, %rax
+Check6:
+    andq %r13, %r13
+    rmmovq %r13, 40(%rsi)
+    jle Check7
+    iaddq $1, %rax
+Check7:
+    andq %r14, %r14
+    rmmovq %r14, 48(%rsi)
+    jle Check8
+    iaddq $1, %rax
+Check8:    
+    andq %rcx, %rcx
+    rmmovq %rcx, 56(%rsi)
+    jle UpdatePointers
+    iaddq $1, %rax
+
+UpdatePointers:
+    iaddq $64, %rdi
+    iaddq $64, %rsi
+    iaddq $-8, %rdx
+    jge MainLoop
+
+SmallArrayRemaining:
+    mrmovq (%rdi), %r12
+    rmmovq %r12, (%rsi)
+    andq %r12, %r12
+    jle SmallSkip
+    iaddq $1, %rax
+SmallSkip:
+    iaddq $8, %rdi
+    iaddq $8, %rsi
+    iaddq $-1, %rdx
+    jg SmallArrayRemaining
+
+Done:
+    ret
+
+        # do not fall through to the end of the source!
+        # Otherwise you will encounter this trap :)
+        trapititit: jmp trapititit
+
+            .pos 0x1000 # source code + stack limits to 4kb
+            .align 8
+        stack:
+        data_to_copy:
+            .quad 0x53175d61490b23df
+        data_dst:
+        

@@ -376,6 +376,7 @@ Disassembly of section .text:
 00000000000014e9 <main>:
     14e9:	f3 0f 1e fa          	endbr64
     14ed:	53                   	push   %rbx
+
     14ee:	83 ff 01             	cmp    $0x1,%edi
     14f1:	0f 84 15 01 00 00    	je     160c <main+0x123>
     14f7:	48 89 f3             	mov    %rsi,%rbx
@@ -387,8 +388,10 @@ Disassembly of section .text:
     1513:	48 89 05 76 6f 00 00 	mov    %rax,0x6f76(%rip)        # 8490 <infile>
     151a:	48 85 c0             	test   %rax,%rax
     151d:	0f 84 fc 00 00 00    	je     161f <main+0x136>
+    
     1523:	e8 6e 08 00 00       	call   1d96 <initialize_bomb>
     1528:	48 89 c3             	mov    %rax,%rbx
+
     152b:	48 8d 3d 5e 2b 00 00 	lea    0x2b5e(%rip),%rdi        # 4090 <_IO_stdin_used+0x90>
     1532:	e8 39 fd ff ff       	call   1270 <puts@plt>
     1537:	48 8d 3d 8a 2b 00 00 	lea    0x2b8a(%rip),%rdi        # 40c8 <_IO_stdin_used+0xc8>
@@ -464,6 +467,7 @@ Disassembly of section .text:
     1678:	48 89 84 24 88 00 00 	mov    %rax,0x88(%rsp)
     167f:	00 
     1680:	31 c0                	xor    %eax,%eax
+
     1682:	48 8d 4c 24 0c       	lea    0xc(%rsp),%rcx
     1687:	48 8d 54 24 08       	lea    0x8(%rsp),%rdx
     168c:	4c 8d 44 24 10       	lea    0x10(%rsp),%r8
@@ -472,6 +476,7 @@ Disassembly of section .text:
     169f:	e8 9c fc ff ff       	call   1340 <__isoc99_sscanf@plt>
     16a4:	83 f8 03             	cmp    $0x3,%eax
     16a7:	74 20                	je     16c9 <abracadabra+0x65>
+
     16a9:	b8 00 00 00 00       	mov    $0x0,%eax
     16ae:	48 8b 94 24 88 00 00 	mov    0x88(%rsp),%rdx
     16b5:	00 
@@ -480,6 +485,7 @@ Disassembly of section .text:
     16bf:	75 2b                	jne    16ec <abracadabra+0x88>
     16c1:	48 81 c4 98 00 00 00 	add    $0x98,%rsp
     16c8:	c3                   	ret
+
     16c9:	48 8d 7c 24 10       	lea    0x10(%rsp),%rdi
     16ce:	48 8d 35 9b 2a 00 00 	lea    0x2a9b(%rip),%rsi        # 4170 <_IO_stdin_used+0x170>
     16d5:	e8 6d 06 00 00       	call   1d47 <strings_not_equal>
@@ -504,23 +510,26 @@ Disassembly of section .text:
     1719:	80 38 00             	cmpb   $0x0,(%rax)
     171c:	75 f7                	jne    1715 <alohomora+0x24>
     171e:	48 83 e8 01          	sub    $0x1,%rax
-    1722:	48 89 e2             	mov    %rsp,%rdx
+    1722:	48 89 e2             	mov    %rsp,%rdx    # rdx指向栈缓冲区（目标）
     1725:	eb 0a                	jmp    1731 <alohomora+0x40>
-    1727:	88 0a                	mov    %cl,(%rdx)
-    1729:	48 83 c2 01          	add    $0x1,%rdx
-    172d:	48 83 e8 01          	sub    $0x1,%rax
-    1731:	0f b6 08             	movzbl (%rax),%ecx
-    1734:	80 f9 20             	cmp    $0x20,%cl
-    1737:	74 0c                	je     1745 <alohomora+0x54>
-    1739:	48 8d 35 58 6e 00 00 	lea    0x6e58(%rip),%rsi        # 8598 <input_strings+0x78>
-    1740:	48 39 f0             	cmp    %rsi,%rax
-    1743:	75 e2                	jne    1727 <alohomora+0x36>
-    1745:	c6 02 00             	movb   $0x0,(%rdx)
-    1748:	48 89 e7             	mov    %rsp,%rdi
-    174b:	48 8d 35 46 2a 00 00 	lea    0x2a46(%rip),%rsi        # 4198 <_IO_stdin_used+0x198>
-    1752:	e8 f0 05 00 00       	call   1d47 <strings_not_equal>
-    1757:	85 c0                	test   %eax,%eax
-    1759:	74 1d                	je     1778 <alohomora+0x87>
+
+    1727:	88 0a                	mov    %cl,(%rdx)   # 存储字符到栈缓冲区
+    1729:	48 83 c2 01          	add    $0x1,%rdx    # 目标指针前进
+    172d:	48 83 e8 01          	sub    $0x1,%rax    # 源指针后退（关键：反向移动）
+
+    1731:	0f b6 08             	movzbl (%rax),%ecx  # 读取当前字符到cl
+    1734:	80 f9 20             	cmp    $0x20,%cl    # 检查是否为空格字符（空格的ascii是0x20）
+    1737:	74 0c                	je     1745 <alohomora+0x54>    # 如果是空格，结束复制
+    1739:	48 8d 35 58 6e 00 00 	lea    0x6e58(%rip),%rsi        # rsi = 字符串起始地址  # 8598 <input_strings+0x78>
+    1740:	48 39 f0             	cmp    %rsi,%rax    # 检查是否回到字符串开头
+    1743:	75 e2                	jne    1727 <alohomora+0x36>    # 如果没到开头，继续复制
+    1745:	c6 02 00             	movb   $0x0,(%rdx)  # 在复制结果后添加NULL
+    1748:	48 89 e7             	mov    %rsp,%rdi    # rdi = 反转后的字符串
+
+    174b:	48 8d 35 46 2a 00 00 	lea    0x2a46(%rip),%rsi        # rsi = 目标字符串地址(0x4198) # 4198 <_IO_stdin_used+0x198>
+    1752:	e8 f0 05 00 00       	call   1d47 <strings_not_equal> 
+    1757:	85 c0                	test   %eax,%eax                # 检查是否相等
+    1759:	74 1d                	je     1778 <alohomora+0x87>    # 如果相等，返回1
     175b:	b8 00 00 00 00       	mov    $0x0,%eax
     1760:	48 8b 54 24 78       	mov    0x78(%rsp),%rdx
     1765:	64 48 2b 14 25 28 00 	sub    %fs:0x28,%rdx

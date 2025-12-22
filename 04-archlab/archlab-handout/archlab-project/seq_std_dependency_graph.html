@@ -1,0 +1,1072 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Architecture Computational Dependency Graph</title>
+    <script src="https://cdn.jsdelivr.net/npm/echarts@5.4.2/dist/echarts.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/echarts-gl@2.0.9/dist/echarts-gl.min.js"></script>
+    <style> .container { display: flex; justify-content: center; align-items: center; } .item { margin: auto; } </style>
+  </head>
+  <body>
+      <div class="container">
+        <div class="item" id="chart" style="width: 1200px; height: 800px"></div>
+      </div>
+      
+      <script type="text/javascript">
+          
+          var chart = echarts.init(document.getElementById('chart'), null, { renderer: 'canvas' });
+          var option = {
+  "series": [
+    {
+      "type": "sankey",
+      "emphasis": {
+        "focus": "adjacency"
+      },
+      "links": [
+        {
+          "source": "align",
+          "target": "ialign-align",
+          "value": 1.0
+        },
+        {
+          "source": "alu",
+          "target": "alu-e",
+          "value": 1.0
+        },
+        {
+          "source": "alu-a",
+          "target": "alu",
+          "value": 1.0
+        },
+        {
+          "source": "alu-b",
+          "target": "alu",
+          "value": 1.0
+        },
+        {
+          "source": "alu-e",
+          "target": "valE",
+          "value": 1.0
+        },
+        {
+          "source": "alu-fun",
+          "target": "alu",
+          "value": 1.0
+        },
+        {
+          "source": "aluA",
+          "target": "alu-a",
+          "value": 1.0
+        },
+        {
+          "source": "aluA",
+          "target": "reg_cc-a",
+          "value": 1.0
+        },
+        {
+          "source": "aluB",
+          "target": "alu-b",
+          "value": 1.0
+        },
+        {
+          "source": "aluB",
+          "target": "reg_cc-b",
+          "value": 1.0
+        },
+        {
+          "source": "alufun",
+          "target": "alu-fun",
+          "value": 1.0
+        },
+        {
+          "source": "alufun",
+          "target": "reg_cc-opfun",
+          "value": 1.0
+        },
+        {
+          "source": "cc",
+          "target": "cond-cc",
+          "value": 1.0
+        },
+        {
+          "source": "cnd",
+          "target": "dstE",
+          "value": 1.0
+        },
+        {
+          "source": "cnd",
+          "target": "new_pc",
+          "value": 1.0
+        },
+        {
+          "source": "cond",
+          "target": "cond-cnd",
+          "value": 1.0
+        },
+        {
+          "source": "cond-cc",
+          "target": "cond",
+          "value": 1.0
+        },
+        {
+          "source": "cond-cnd",
+          "target": "cnd",
+          "value": 1.0
+        },
+        {
+          "source": "cond-condfun",
+          "target": "cond",
+          "value": 1.0
+        },
+        {
+          "source": "dmem",
+          "target": "dmem-dataout",
+          "value": 1.0
+        },
+        {
+          "source": "dmem",
+          "target": "dmem-error",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-addr",
+          "target": "dmem",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-datain",
+          "target": "dmem",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-dataout",
+          "target": "valM",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-error",
+          "target": "stat",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-read",
+          "target": "dmem",
+          "value": 1.0
+        },
+        {
+          "source": "dmem-write",
+          "target": "dmem",
+          "value": 1.0
+        },
+        {
+          "source": "dstE",
+          "target": "reg_write-dstE",
+          "value": 1.0
+        },
+        {
+          "source": "dstM",
+          "target": "reg_write-dstM",
+          "value": 1.0
+        },
+        {
+          "source": "ialign",
+          "target": "ialign-rA",
+          "value": 1.0
+        },
+        {
+          "source": "ialign",
+          "target": "ialign-rB",
+          "value": 1.0
+        },
+        {
+          "source": "ialign",
+          "target": "ialign-valC",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-align",
+          "target": "ialign",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-need_regids",
+          "target": "ialign",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-rA",
+          "target": "dstM",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-rA",
+          "target": "srcA",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-rB",
+          "target": "dstE",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-rB",
+          "target": "srcB",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-valC",
+          "target": "aluA",
+          "value": 1.0
+        },
+        {
+          "source": "ialign-valC",
+          "target": "new_pc",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "aluA",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "aluB",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "alufun",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "dstE",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "dstM",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "instr_valid",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "mem_addr",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "mem_data",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "mem_read",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "mem_write",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "need_regids",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "need_valC",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "new_pc",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "set_cc",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "srcA",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "srcB",
+          "value": 1.0
+        },
+        {
+          "source": "icode",
+          "target": "stat",
+          "value": 1.0
+        },
+        {
+          "source": "ifun",
+          "target": "alufun",
+          "value": 1.0
+        },
+        {
+          "source": "ifun",
+          "target": "cond-condfun",
+          "value": 1.0
+        },
+        {
+          "source": "imem",
+          "target": "imem-align",
+          "value": 1.0
+        },
+        {
+          "source": "imem",
+          "target": "imem-error",
+          "value": 1.0
+        },
+        {
+          "source": "imem",
+          "target": "imem-icode",
+          "value": 1.0
+        },
+        {
+          "source": "imem",
+          "target": "imem-ifun",
+          "value": 1.0
+        },
+        {
+          "source": "imem-align",
+          "target": "align",
+          "value": 1.0
+        },
+        {
+          "source": "imem-error",
+          "target": "icode",
+          "value": 1.0
+        },
+        {
+          "source": "imem-error",
+          "target": "ifun",
+          "value": 1.0
+        },
+        {
+          "source": "imem-error",
+          "target": "stat",
+          "value": 1.0
+        },
+        {
+          "source": "imem-icode",
+          "target": "icode",
+          "value": 1.0
+        },
+        {
+          "source": "imem-ifun",
+          "target": "ifun",
+          "value": 1.0
+        },
+        {
+          "source": "imem-pc",
+          "target": "imem",
+          "value": 1.0
+        },
+        {
+          "source": "instr_valid",
+          "target": "stat",
+          "value": 1.0
+        },
+        {
+          "source": "mem_addr",
+          "target": "dmem-addr",
+          "value": 1.0
+        },
+        {
+          "source": "mem_data",
+          "target": "dmem-datain",
+          "value": 1.0
+        },
+        {
+          "source": "mem_read",
+          "target": "dmem-read",
+          "value": 1.0
+        },
+        {
+          "source": "mem_write",
+          "target": "dmem-write",
+          "value": 1.0
+        },
+        {
+          "source": "need_regids",
+          "target": "ialign-need_regids",
+          "value": 1.0
+        },
+        {
+          "source": "need_regids",
+          "target": "pc_inc-need_regids",
+          "value": 1.0
+        },
+        {
+          "source": "need_valC",
+          "target": "pc_inc-need_valC",
+          "value": 1.0
+        },
+        {
+          "source": "pc",
+          "target": "imem-pc",
+          "value": 1.0
+        },
+        {
+          "source": "pc",
+          "target": "pc_inc-old_pc",
+          "value": 1.0
+        },
+        {
+          "source": "pc_inc",
+          "target": "pc_inc-new_pc",
+          "value": 1.0
+        },
+        {
+          "source": "pc_inc-need_regids",
+          "target": "pc_inc",
+          "value": 1.0
+        },
+        {
+          "source": "pc_inc-need_valC",
+          "target": "pc_inc",
+          "value": 1.0
+        },
+        {
+          "source": "pc_inc-new_pc",
+          "target": "valP",
+          "value": 1.0
+        },
+        {
+          "source": "pc_inc-old_pc",
+          "target": "pc_inc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc",
+          "target": "reg_cc-cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-a",
+          "target": "reg_cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-b",
+          "target": "reg_cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-cc",
+          "target": "cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-e",
+          "target": "reg_cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-opfun",
+          "target": "reg_cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_cc-set_cc",
+          "target": "reg_cc",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read",
+          "target": "reg_read-valA",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read",
+          "target": "reg_read-valB",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-srcA",
+          "target": "reg_read",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-srcB",
+          "target": "reg_read",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-valA",
+          "target": "aluA",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-valA",
+          "target": "mem_addr",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-valA",
+          "target": "mem_data",
+          "value": 1.0
+        },
+        {
+          "source": "reg_read-valB",
+          "target": "aluB",
+          "value": 1.0
+        },
+        {
+          "source": "reg_write-dstE",
+          "target": "reg_write",
+          "value": 1.0
+        },
+        {
+          "source": "reg_write-dstM",
+          "target": "reg_write",
+          "value": 1.0
+        },
+        {
+          "source": "reg_write-valE",
+          "target": "reg_write",
+          "value": 1.0
+        },
+        {
+          "source": "reg_write-valM",
+          "target": "reg_write",
+          "value": 1.0
+        },
+        {
+          "source": "set_cc",
+          "target": "reg_cc-set_cc",
+          "value": 1.0
+        },
+        {
+          "source": "srcA",
+          "target": "reg_read-srcA",
+          "value": 1.0
+        },
+        {
+          "source": "srcB",
+          "target": "reg_read-srcB",
+          "value": 1.0
+        },
+        {
+          "source": "stat",
+          "target": "prog_term",
+          "value": 1.0
+        },
+        {
+          "source": "valE",
+          "target": "mem_addr",
+          "value": 1.0
+        },
+        {
+          "source": "valE",
+          "target": "reg_cc-e",
+          "value": 1.0
+        },
+        {
+          "source": "valE",
+          "target": "reg_write-valE",
+          "value": 1.0
+        },
+        {
+          "source": "valM",
+          "target": "new_pc",
+          "value": 1.0
+        },
+        {
+          "source": "valM",
+          "target": "reg_write-valM",
+          "value": 1.0
+        },
+        {
+          "source": "valP",
+          "target": "mem_data",
+          "value": 1.0
+        },
+        {
+          "source": "valP",
+          "target": "new_pc",
+          "value": 1.0
+        }
+      ],
+      "data": [
+        {
+          "name": "align",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "alu",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "alu-a",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "alu-b",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "alu-e",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "alu-fun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "aluA",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "aluB",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "alufun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "cc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "cnd",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "cond",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "cond-cc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "cond-cnd",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "cond-condfun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "dmem-addr",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem-datain",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem-dataout",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem-error",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem-read",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dmem-write",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dstE",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "dstM",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ialign",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "ialign-align",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ialign-need_regids",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ialign-rA",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ialign-rB",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ialign-valC",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "icode",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "ifun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "imem",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "imem-align",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "imem-error",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "imem-icode",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "imem-ifun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "imem-pc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "instr_valid",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "mem_addr",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "mem_data",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "mem_read",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "mem_write",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "need_regids",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "need_valC",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "new_pc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "pc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "pc_inc",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "pc_inc-need_regids",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "pc_inc-need_valC",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "pc_inc-new_pc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "pc_inc-old_pc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "prog_term",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-a",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-b",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-cc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-e",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-opfun",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_cc-set_cc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_read",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "reg_read-srcA",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_read-srcB",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_read-valA",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_read-valB",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_write",
+          "itemStyle": {
+            "color": "rgba(0,0,255,0.5)"
+          }
+        },
+        {
+          "name": "reg_write-dstE",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_write-dstM",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_write-valE",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "reg_write-valM",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "set_cc",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "srcA",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "srcB",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "stat",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "valE",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "valM",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        },
+        {
+          "name": "valP",
+          "itemStyle": {
+            "color": "rgba(255,0,0,0.5)"
+          }
+        }
+      ]
+    }
+  ]
+};
+          chart.setOption(option);
+      </script>
+  </body>
+</html>

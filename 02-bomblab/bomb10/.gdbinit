@@ -16,10 +16,10 @@ b phase_4
 b phase_5
 b phase_6
 
-# 跳过本地化检查
-b *(main+0x2e)
+
+b *(main+0x3a)
 command
-j *(main+0xb0)
+j *(main+0x42)
 end
 
 

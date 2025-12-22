@@ -1,0 +1,88 @@
+# name: twj
+# id: 2400016635
+
+	.pos 0
+	irmovq	stack,%rsp
+	call main
+	halt
+
+	.align 8
+array:
+	.quad 0xbca
+	.quad 0xcba
+	.quad 0xacb
+	.quad 0xcab
+	.quad 0xabc
+	.quad 0xbac
+	
+################################################################################
+# You may want to modify this portion
+# %rdi=*data %rsi=count %rdx=*i %rcx=*last %rax=t
+# %r10=*data %r11=*last compare with last and i
+# last每次比较要复制,--的时候用rdi
+# %rbp=i, %r12=*i, %rbp++, %r13=*i
+
+bubble_a:
+	irmovq $8,%r8  # %r8 = 8
+	irmovq $1,%r9  # %r9 = 1
+	rrmovq %rdi,%rcx
+	subq %r9,%rsi
+	andq %rsi,%rsi # Set CC
+	jmp test_loop_last_init  # get %rcx = *last
+
+	loop_last_init:
+		addq %r8,%rcx  # last += 8
+		subq %r9,%rsi  # %rsi = count -= 1, Set CC
+
+	test_loop_last_init:
+		jne loop_last_init
+		# 循环结束后继续
+
+	rrmovq %rcx,%r11  # %r11 = last
+	subq %rdi,%r11  # cmp: last > data?
+	jmp test_loop_outer  # jump to test_loop_outer
+
+	loop_outer:
+		rrmovq %rdi,%rdx  # i = %rdx = data
+		rrmovq %rcx,%r11  # recopy last to r11
+		subq %rdx,%r11    # cmp: last > i?
+		jmp test_loop_inner
+
+
+		loop_inner:
+			rrmovq %rdx,%rbp
+			mrmovq (%rbp),%r12
+			mrmovq 8(%rbp),%r13
+			rrmovq %r12,%r14
+			subq %r13,%r14 # if r12<=r13
+			jle do_not_swap     # 不进行互换
+			rmmovq %r12,8(%rbp)
+			rmmovq %r13,(%rbp)
+		do_not_swap:
+			addq %r8,%rdx    # i++
+			rrmovq %rcx,%r11
+			subq %rdx,%r11
+
+		test_loop_inner:
+			jg loop_inner
+			# 内层循环结束回到外层
+
+
+		subq %r8,%rcx     # minus True last
+		rrmovq %rcx,%r11  # recopy last to copy_last
+		subq %rdi,%r11    # last>data? Set CC
+
+test_loop_outer:
+	jg loop_outer # if >, jump to loop_outer and do loop_inner and last--
+	ret
+
+
+
+main:
+	irmovq array,%rdi
+	irmovq $6,%rsi
+	call bubble_a
+	ret
+
+	.pos 0x200
+stack:

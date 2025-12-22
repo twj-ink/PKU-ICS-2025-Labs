@@ -1,0 +1,62 @@
+# name: twj
+# id: 2400016635
+
+# As you've got familiar with Y86 after writting your first y86 code
+# (bubble.ys), this code is left blank for you :)
+# As you've got familiar with Y86 after writting your first y86 code
+# (bubble.ys), this code is left blank for you :)
+	.pos 0
+	irmovq	stack,%rsp
+	call main
+	halt
+
+ # Sample linked list
+    .align 8
+ele1:
+    .quad 0x00d
+    .quad ele2
+ele2:
+    .quad 0x0e0
+    .quad ele3
+ele3:
+    .quad 0xf00
+    .quad 0
+	
+################################################################################
+# You may want to modify this portion
+# 
+
+
+rsum_list_a:
+    pushq %rbp
+    xorq %rax,%rax
+    irmovq $8,%r8
+    andq %rdi,%rdi  # Set CC, while ls!=0
+    jmp test_loop_rsum
+
+loop_rsum:
+    mrmovq (%rdi),%rax      # rax=val
+    rrmovq %rax,%rbp
+    addq %r8,%rdi
+    mrmovq (%rdi),%rdx     # get the ele2_addr
+    rrmovq %rdx,%rdi
+
+    call rsum_list_a
+    rrmovq %rbp,%r10
+    addq %r10,%rax
+    popq %rbp
+    ret
+
+test_loop_rsum:
+    jne loop_rsum
+    popq %rbp
+    ret
+
+
+main:
+	irmovq ele1,%rdi
+	call rsum_list_a
+	ret
+
+	.pos 0x200
+stack:
