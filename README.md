@@ -39,8 +39,8 @@
 而且这个编辑器既然是存在于Linux系统中的，于是可以编写各种代码如python、cpp，并随时保存和在命令行中（编译和）运行，实际上与windows系统中的pycharm或者vscode功能是差不多的。
 
 但是配置完成后真的很酷啊！效果图如下（第二张是设置了JetBrains Mono字体的）：
-![my_vim_after_setting.png](imgs%2Fmy_vim_after_setting.png)
-![my_vim_after_setting2.png](imgs%2Fmy_vim_after_setting2.png)
+![my_vim_after_setting.png](./imgs/my_vim_after_setting.png)
+![my_vim_after_setting2.png](./imgs/my_vim_after_setting2.png)
 
 这里附上我配置vim参考的链接教程：`https://blog.csdn.net/qq_42417071/article/details/139027077` 。
 
@@ -607,6 +607,12 @@ ISA: 一个处理器支持的指令和指令的字节级编码称为它的指令
 
 ![Y86-64指令集](./imgs/Y86-64指令集.png)
 
+CISC 和 RISC 的对比：
+* CISC（复杂指令集）：**指令多而强大**，一条复杂指令能干好多事
+* RISC（精简指令集）：**指令少而简单**，需要多条简单指令组合完成复杂任务
+
+相比于RISC，CISC的指令多，硬件复杂使得软件简单，指令长度变长，寻址方式多（RISC通常只有load/store），寄存器数量少（RISC使用寄存器密集的过程链接）。
+
 ![CISC_RISC](./imgs/CISC-RISC.png)
 
 ### 4.2 逻辑设计和硬件控制语言HCL
@@ -631,13 +637,190 @@ HCL(Hardware Control Language 硬件控制语言)
 ![4](./imgs/4.4.png)
 ![5](./imgs/4.5.png)
 
+### 4.4 Y86-64的流水线实现
+
+1. 预测错误，需要在JXX进入到M阶段才能检查E阶段产生的cc是否成立。在f_pc中检查`if M.icode==JX && !M.cnd`，如果成立说明预测错误，此时流水线中已经进入了两条新指令，我们需要取消这两条指令，并且让pc指向JXX后面的地址。策略是使得f_pc取`M.valA`，同时让F阶段正常取指，D和E阶段都bubble掉。注意`M.valA`在其D阶段中已经确定了valA的来源是JXX跳转的地址。
+
+![1jxx](./imgs/chapter4/JXX.png)
+
+2. ret指令，由于需要待其进入M阶段才能读出下一条指令地址，当到达M时已经有3条新的指令了，需要连续bubble三次才能清空此时的流水线。所以在f_pc中检查`if W.icode==RET`，如果成立说明接下来的pc应该取`W.valM`，同时让F阶段暂停，D阶段bubble掉。注意`W.valM`是在刚刚的M阶段从内存取出的valM传递到W阶段寄存器的值。
+
+![2ret](./imgs/chapter4/ret.png)
+
+3. load/use冒险，由于上一条指令需要到M阶段才能读出来值而下一条需要在D阶段解析，需要让F和D阶段stall，E阶段bubble掉，这样使得下一条指令的D能延迟到上一条的M，这样就能直接数据前递，让D中的值取`m_valM`即可。注意`m_valM`是在此时M阶段刚刚计算出来的valM的值。
+
+![3loaduse](./imgs/chapter4/load_use.png)
+
+对上者总结就是下图：
+![4.4](./imgs/chapter4/流水线控制逻辑.png)
+
+
 ## 6. 存储器层次结构
+
+1. 易失性存储器：
+  1. SRAM 速度快，成本高，结构复杂（每单元有6个晶体管），容量小
+  2. DRAM
+2. 非易失性存储器
+  1. ROM（只读存储器），但并不是全部都是只能读不能写
+  2. HDD(Hard Disk Drive) 圆盘机械结构，容量大，怕震动，成本低
+  3. SSD(Solid State Drive) 抗震，速度快，有擦写次数限制
 
 ![](./imgs/chapter6/各个存储器访问时间对比.png)
 ![](./imgs/chapter6/存储器层次结构.png)
 ![](./imgs/chapter6/高速缓存通用组织.png)
 
 
+## 7. 链接
+
+### 符号解析
+
+```c
+/*
+未初始化的全局变量--COMMON
+未初始化的静态变量 & 初始化为0的全局和静态变量 -- .bss
+初始化了的且不为0的全局和静态变量 -- .data
+*/
+
+/*
+extern int a;
+int foo(); 这些都是只**声明**，如果没有引用则不会出现在符号表中
+
+int a;
+int a = 1; 这些都是定义，会出现在.bss或者.data中，分配内存
+
+int foo(){} 这种是定义，会出现在.text中
+*/
+
+int val_global_undef;               // C
+int val_global_init0 = 0;           // B
+int val_global_init = 111;          // D
+static int s_val_global_undef;      // b
+static int s_val_global_init0 = 0;  // b
+static int s_val_global_init = 123; // d
+
+int *val_ptr_undef;
+
+// extern int e_val_global_undef[];      // 如果没有被使用就不产生在符号表中，被使用（引用）是U
+/* extern */int sum_declaration(int *a, int n); // 函数默认有extern，如果不被使用就不会产生在符号表中
+/* extern */int sum_definition(int *a, int n){return 3;} // 并非纯声明，有定义，出现在T中
+
+int array_undef[2];                 // C
+int array_init[2] = {1, 2};         // D
+
+int foo() { // T
+	int foo_val_undef;
+	int foo_val_init_0 = 0;
+	int foo_val_init = 1234;
+	static int sfoo_val_undef;      // b
+	static int sfoo_val_init_0 = 0; // b
+	static int sfoo_val_init = 214; // d
+	return foo_val_init;
+}
+
+int main() { // T
+	// int *val = &e_val_global_undef[0];
+	int val = 1;
+	return val;
+}
+```
+
+### 与静态库的链接
+
+静态库是一个归档文件(archive file)，它包含了多个目标文件(object file)。静态库的文件名通常以`.a`结尾，比如`libm.a`。
+
+链接器是这样使用静态库来解析引用的：
+
+1. 维护三个关键集合：
+
+  * 可重定位目标文件集合(E)：最终将被合并到可执行文件中的 `.o` 文件列表。
+  * 未解析符号集合(U)：当前已被引用（例如通过extern声明），但尚未找到其定义的所有符号。
+  * 已定义符号集合 (D)：到目前为止，所有由已添加到 E 中的文件所定义的符号。
+
+2. 初始化与命令行扫描：
+
+链接器初始化 E, U, D 为空。然后从左到右依次扫描命令行上给出的文件（包括目标文件 .o 和静态库 .a）。
+
+3. 针对不同类型的文件，链接器采取不同操作：
+
+  * 遇到目标文件 (.o)：
+    * 无条件地将此 .o 文件加入集合 E。
+    * 将此 .o 文件中定义的所有符号加入 D。
+    * 将此 .o 文件中引用的、但尚未在 D 中找到定义的符号加入 U。
+
+  * 遇到静态库 (.a)：
+    * 将 .a 文件视为一个“目标文件的归档包”。链接器会遍历库中的所有成员目标文件（如 libc.a 中的 printf.o, malloc.o 等）。
+    * 对于库中的每一个成员目标文件，链接器检查：该成员文件是否定义了 U 中当前列出的某个未解析符号？
+    * 如果 **是**，链接器就将该成员 .o 文件从库中“提取”出来，像处理普通目标文件一样处理它（即加入 E，更新 D 和 U）。
+    * 如果 **否**，链接器就简单地跳过这个成员文件。
+    * 对库中所有成员文件检查完毕后，链接器就继续处理命令行上的下一个文件。
+
+4. 扫描结束与结果判断：
+
+  * 当命令行上所有文件都扫描完毕后，链接器进行检查：
+    * 如果 U 为空：恭喜，所有符号引用都已成功解析。链接器合并 E 中的所有 .o 文件，生成最终的可执行文件。
+    * 如果 U 不为空：链接器报错 “undefined reference to xxx”，链接失败。
+
+如依赖关系：` p.o → libx.a → liby.a → libz.a 和 liby.a → libx.a → libz.a`，给出使得静态链接器能够解析所有符号引用的最小的命令行:
+
+```bash
+gcc p.o libx.a liby.a libx.a libz.a
+```
+
+
+### 重定位符号引用
+
+0. 重定位条目
+
+```c
+typedef struct {
+  long offset; 
+  long type:32,
+       symbol:32;
+  long addend;
+} Elf64_Rela;
+```
+
+`offset`：需要重定位的地址相对于节(section)起始地址的偏移量。
+`type`：重定位的类型，决定了如何计算重定位地址。比如：R_X86_64_PC32表示PC相对引用，R_X86_64_32表示使用32为绝对地址的引用。
+`symbol`：符号表中符号的索引，表示需要重定位的符号。
+`addend`：一个常数值，通常用于调整计算结果。对于PC32这个值是-4；对于PC64这个值是-8。
+
+1. 重定位PC相对引用
+
+* 首先，遍历每一个节s，它是一个字节数组；并遍历节s中的每一个重定位条目r。
+* 对于每一个重定位条目r，我们需要两个数字：
+  1. `refptr`：需要重定位的地址，计算方式是节s的起始地址加上r.offset。这个地址是在未链接时需要改写的地址。在改写之前，refptr位置是全0的4个字节（对于32位）。
+  2. `*refptr`：这个需要重定位地址处应该填写的真实数字，计算方式是：
+    * 获取节s的运行时地址（记为ADDR(s)），加上r.offset，得到refptr的运行时地址，记作`refaddr`。
+    * 获取符号表中索引为r.symbol的符号的运行时地址（记为ADDR(r.symbol)），减去在刚刚获取的`refaddr`，再加上r.addend，得到`*refptr`的值。
+* 最后，将`*refptr`的值写入到`refptr`位置，完成重定位。
+
+2. 重定位绝对引用
+
+* 首先，遍历每一个节s，它是一个字节数组；并遍历节s中的每一个重定位条目r。
+* 对于每一个重定位条目r，我们需要两个数字：
+  1. `refptr`：需要重定位的地址，计算方式是节s的起始地址加上r.offset。这个地址是在未链接时需要改写的地址。在改写之前，refptr位置是全0的4个字节（对于32位）。
+  2. `*refptr`：这个需要重定位地址处应该填写的真实数字，计算方式是：
+    * 获取符号表中索引为r.symbol的符号的运行时地址（记为ADDR(r.symbol)），再加上r.addend，得到`*refptr`的值。
+* 最后，将`*refptr`的值写入到`refptr`位置，完成重定位。
+
+总结一下：首先我们需要找到在链接之前，需要改写地址的地方，也就是节s的地址+`r.offset`，这里起初是全0的。然后我们根据`r.type`来决定如何计算这个地址应该被改写成什么值。如果是PC相对引用，那么我们需要用符号的运行时地址减去这个地址（在运行时的该地址）再加上addend；如果是绝对引用，那么我们只需要用符号的地址加上addend。最后将计算出来的值写入到需要改写的地址处。
+
+给出代码：
+```c
+foreach section s {
+  foreach relocation entry r in s {
+    refptr = s.start_address + r.offset; // 此处是需要进行改写的地方
+    
+    if (r.type == R_X86_64_PC32) {
+      refaddr = ADDR(s) + r.offset; // 计算出refptr在运行时的地址
+      *refptr = ADDR(r.symbol) - refaddr + r.addend; // 计算出需要写入refptr的值
+    } else if (r.type == R_X86_64_32) {
+      *refptr = ADDR(r.symbol) + r.addend; // 计算出需要写入refptr的值
+    }
+  }
+}
+```
 
 ## 9. 虚拟地址
 
