@@ -655,6 +655,114 @@ HCL(Hardware Control Language 硬件控制语言)
 ![4.4](./imgs/chapter4/流水线控制逻辑.png)
 
 
+在流水线设计中，预测pc值是这样的：
+```rust
+// What address should instruction be fetched at
+u64 f_pc = [
+    // Mispredicted branch. Fetch at incremented PC
+    M.icode == JX && !M.cnd : M.valA;
+    // Completion of RET instruction
+    W.icode == RET : W.valM;
+    // Default: Use predicted value of PC (default to 0)
+    1 : F.pred_pc;
+];
+```
+
+在D阶段，考虑到对于valA和valB的数据前递，对于二者的取值有一定的优先级顺序，具体如下：
+1. 如果是`CALL`或者`JX`，将`d_valA`设置为`D.valP`，这个值实际上是为JX预测错误准备的。同时，这个值也是`JX Dest`执行之后的紧邻着的指令地址。实际上对于`JX`，在F阶段就已经将pc默认设置为`Dest`继续执行了；然后我们会在M阶段判断这个跳转到底对不对，如果不对，那么我们就需要获取`JX Dest`这个指令的下一个指令的正确地址；而这个地址我们在此时就放进`d_valA`，然后不断传递到`M_valA`，便于在`f_pc`中进行预测下一个pc的值。而对于CALL而言这个valA实际没有作用。
+2. 接下来就要考虑是否要数据前递了。而前递的优先级是**阶段越靠前优先级越高**，这是因为靠前说明这个指令是与当前指令距离近的（或者说是在当前指令之前的指令中，最迟的那一条指令），这样的话，我们找到了最近的那个先前指令可以保证要传递的数据是**最新**的可能要被更新的数据。
+3. 如果不需要前递，就使用从`rA`寄存器读取的值就行了。
+```rust
+// What should be the A value?
+// Forward into decode stage for valA
+u64 d_valA = [
+    D.icode in { CALL, JX } : D.valP; // Use incremented PC
+    d_srcA == e_dstE : e_valE; // Forward valE from execute
+    d_srcA == M.dstM : m_valM; // Forward valM from memory
+    d_srcA == M.dstE : M.valE; // Forward valE from memory
+    d_srcA == W.dstM : W.valM; // Forward valM from write back
+    d_srcA == W.dstE : W.valE; // Forward valE from write back
+    1 : d_rvalA; // Use value read from register file
+];
+
+u64 d_valB = [
+    d_srcB == e_dstE : e_valE; // Forward valE from execute
+    d_srcB == M.dstM : m_valM; // Forward valM from memory
+    d_srcB == M.dstE : M.valE; // Forward valE from memory
+    d_srcB == W.dstM : W.valM; // Forward valM from write back
+    d_srcB == W.dstE : W.valE; // Forward valE from write back
+    1 : d_rvalB; // Use value read from register file
+];
+```
+
+---
+
+再来看逻辑控制，F阶段不可能会bubble，只会stall，什么时候会stall？在load/use的时候会和D一起stall；在ret的时候也会stall等待ret从M中读取新pc值。所以有：
+```rust
+// Should I stall or inject a bubble into Pipeline Register F?
+// At most one of these can be true.
+bool f_bubble = false;
+bool f_stall =
+    // Conditions for a load/use hazard
+    E.icode in { MRMOVQ, POPQ } && E.dstM in { d_srcA, d_srcB } ||
+    // Stalling at fetch while ret passes through pipeline
+    RET in {D.icode, E.icode, M.icode};
+```
+注意，load/use必须是从内存中load才行，所以只会有`MRMOVQ`和`POPQ`可能造成。
+
+在D阶段，什么时候会bubble？在ret的时候会将之后的三条指令都bubble掉；在预测错误的时候也会和E一起bubble掉两条无用指令。所以有：
+```rust
+bool d_bubble =
+    // Mispredicted branch
+    (E.icode == JX && !e_cnd) ||
+    // Stalling at fetch while ret passes through pipeline
+    // but not condition for a load/use hazard
+    !(E.icode in { MRMOVQ, POPQ } && E.dstM in { d_srcA, d_srcB }) &&
+      RET in {D.icode, E.icode, M.icode};
+```
+
+在D阶段，什么时候会stall？在load/use的时候会和F一起stall。
+```rust
+bool d_stall =
+    // Conditions for a load/use hazard
+    E.icode in { MRMOVQ, POPQ } && E.dstM in { d_srcA, d_srcB };
+```
+
+在E阶段，当load/use的时候会bubble；当预测错误的时候会bubble；不会stall。
+```rust
+// Should I stall or inject a bubble into Pipeline Register E?
+// At most one of these can be true.
+bool e_stall = false;
+bool e_bubble =
+    // Mispredicted branch
+    (E.icode == JX && !e_cnd) ||
+    // Conditions for a load/use hazard
+    E.icode in { MRMOVQ, POPQ } && E.dstM in { d_srcA, d_srcB };
+```
+
+---
+
+教材课后题中提到了一种叫做**加载转发**的技术。考虑这样的load/use问题：
+```
+mrmovq 0(%rcx),%rdx    # Load 1
+pushq %rdx             # Store 1
+nop
+popq %rdx              # Load 2
+rmmovq %rax,0(%rdx)    # Store 2
+```
+一般的load/use需要在store的时候将F和D暂停，等到load到达M的时候进行数据前递。一般的判断方式是这样的：
+```rust
+E.icode in {IMRMOVQ, IPOPQ} && E.dstM in {d_srcA, d_srcB}
+```
+这样的原因是，use的时候是需要在D阶段解析出来的。但是在这里的Load1和Store1中，use虽然也需要在D阶段解析%rdx的值，但是**真正需要使用它却是在访存的M阶段**。而当它到达M的时候，Load已经到达了W阶段（在没stall的情况下），此时是可以将`W_valA`直接传递到M中的，而这个`W_valA`来自Load在M中读出来的`m_valM`。类似的，真正使用load值是在M阶段的除了pushq以外还有rmmovq。所以在增加了这一加载转发技术之后，判断发现load/use冒险的逻辑公式就变成：
+```rust
+E_icode in {IMRMOVL,IPOPL} &&
+E_dstM in {d_srcA} && !(D_icode in { IRMMOVQ, IPUSHQ })
+E_dstM in {d_srcB}
+```
+
+![alt text](./imgs/chapter4/load_forwarding.png)
+
 ## 6. 存储器层次结构
 
 1. 易失性存储器：
