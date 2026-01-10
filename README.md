@@ -579,7 +579,7 @@ int main(){
 
 这是教材的原话，下面给出一个例子：
 
-![指针运算EX](./imgs/指针运算EX.png)
+![指针运算EX](./imgs/chapter2/指针运算EX.png)
 
 这里面`s.u`的大小是4，`s`的整体大小是24。看CD选项，取地址符号取出来地址，然后对地址运算，实际上和指针运算是一致的。我们给出这样的计算方式：
 
@@ -605,7 +605,7 @@ $$
 
 ISA: 一个处理器支持的指令和指令的字节级编码称为它的指令集体系结构(Instruction-Set Architecture)，是硬件和软件之间的过渡与承接口。
 
-![Y86-64指令集](./imgs/Y86-64指令集.png)
+![Y86-64指令集](./imgs/chapter4/Y86-64指令集.png)
 
 CISC 和 RISC 的对比：
 * CISC（复杂指令集）：**指令多而强大**，一条复杂指令能干好多事
@@ -613,7 +613,7 @@ CISC 和 RISC 的对比：
 
 相比于RISC，CISC的指令多，硬件复杂使得软件简单，指令长度变长，寻址方式多（RISC通常只有load/store），寄存器数量少（RISC使用寄存器密集的过程链接）。
 
-![CISC_RISC](./imgs/CISC-RISC.png)
+![CISC_RISC](./imgs/chapter4/CISC-RISC.png)
 
 ### 4.2 逻辑设计和硬件控制语言HCL
 
@@ -629,13 +629,13 @@ HCL(Hardware Control Language 硬件控制语言)
 
 将处理一条指令划分为6个阶段。
 
-![SEQ-six-phase](./imgs/SEQ六阶段.png)
+![SEQ-six-phase](./imgs/chapter4/SEQ六阶段.png)
 
-![1](./imgs/4.1.png)
-![2](./imgs/4.2.png)
-![3](./imgs/4.3.png)
-![4](./imgs/4.4.png)
-![5](./imgs/4.5.png)
+![1](./imgs/chapter4/4.1.png)
+![2](./imgs/chapter4/4.2.png)
+![3](./imgs/chapter4/4.3.png)
+![4](./imgs/chapter4/4.4.png)
+![5](./imgs/chapter4/4.5.png)
 
 ### 4.4 Y86-64的流水线实现
 

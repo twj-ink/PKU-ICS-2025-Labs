@@ -1,0 +1,1 @@
+写一个proxy，很有趣的lab，教材给的tiny代码实现的是一个服务器server，而我们要写一个代理proxy，代理的作用是接受客户端client的请求，然后将请求转发给服务器server，获取服务器的响应之后再返回给客户端，相当于在client和server之间插入了一个中间人proxy。
